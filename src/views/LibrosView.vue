@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-const filtro = ref('')
+import Swal from 'sweetalert2'
 import { ref, onMounted, computed } from 'vue'
 import LibroForm from '@/components/LibrosFormulario.vue'
 import {
@@ -66,6 +66,7 @@ import {
   updateLibro,
 } from '@/services/libroService'
 
+const filtro = ref('')
 const libros = ref<any[]>([])
 const editandoId = ref<number | null>(null)
 const libroEditado = ref<any>({
@@ -111,13 +112,26 @@ const guardarEdicion = async (id: number) => {
 
 // Eliminar libro
 const eliminarLibro = async (id: number) => {
-  try {
-    if (confirm('¿Estás seguro de eliminar este libro?')) {
+  const confirmacion = await Swal.fire({
+    title: '¿Eliminar este libro?',
+    text: 'Esta acción no se puede deshacer.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  })
+
+  if (confirmacion.isConfirmed) {
+    try {
       await deleteLibro(id)
-      obtenerLibros()
+      await obtenerLibros()
+      Swal.fire('Eliminado', 'El libro ha sido eliminado.', 'success')
+    } catch (error) {
+      Swal.fire('Error', 'No se pudo eliminar el libro.', 'error')
+      console.error(error)
     }
-  } catch (error) {
-    console.error('Error al eliminar libro:', error)
   }
 }
 
