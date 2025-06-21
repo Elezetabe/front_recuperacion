@@ -125,7 +125,12 @@ const guardarEdicion = async (id: number) => {
 
   if (confirmacion.isConfirmed) {
     try {
-      await updateLibro(id, libroEditado.value)
+      await updateLibro(id, {
+        titulo,
+        autor,
+        editorial,
+        fecha_publicacion: fechaPublicacion // ← aquí se hace el cambio necesario
+      })
       editandoId.value = null
       obtenerLibros()
       Swal.fire('Actualizado', 'El libro fue editado exitosamente.', 'success')
