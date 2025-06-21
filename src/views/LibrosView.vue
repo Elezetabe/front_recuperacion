@@ -5,6 +5,12 @@
     <!-- Componente del formulario -->
     <LibroForm @libroCreado="obtenerLibros" />
 
+    <input
+  v-model="filtro"
+  placeholder="Buscar por título o autor"
+  class="filtro"
+/>
+
     <!-- Tabla de libros -->
     <table>
       <thead>
@@ -18,7 +24,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="libro in libros" :key="libro.id">
+        <tr v-for="libro in librosFiltrados" :key="libro.id">
           <td>{{ libro.id }}</td>
           <td v-if="editandoId !== libro.id">{{ libro.titulo }}</td>
           <td v-else><input v-model="libroEditado.titulo" /></td>
@@ -51,7 +57,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+const filtro = ref('')
+import { ref, onMounted, computed } from 'vue'
 import LibroForm from '@/components/LibrosFormulario.vue'
 import {
   getLibros,
@@ -113,6 +120,14 @@ const eliminarLibro = async (id: number) => {
     console.error('Error al eliminar libro:', error)
   }
 }
+
+// Filtrar libros
+const librosFiltrados = computed(() => {
+  return libros.value.filter((libro) =>
+    libro.titulo.toLowerCase().includes(filtro.value.toLowerCase()) ||
+    libro.autor.toLowerCase().includes(filtro.value.toLowerCase())
+  )
+})
 </script>
 
 <style scoped>
@@ -149,5 +164,12 @@ button {
 }
 button:hover {
   background-color: #369d77;
+}
+
+.filtro {
+  padding: 8px;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 16px;
 }
 </style>
