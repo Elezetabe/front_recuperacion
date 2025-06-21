@@ -101,12 +101,38 @@ const cancelarEdicion = () => {
 
 // Guardar edición
 const guardarEdicion = async (id: number) => {
-  try {
-    await updateLibro(id, libroEditado.value)
-    editandoId.value = null
-    obtenerLibros()
-  } catch (error) {
-    console.error('Error al actualizar libro:', error)
+  const { titulo, autor, editorial, fechaPublicacion } = libroEditado.value
+
+  // Validaciones básicas
+  if (!titulo || !autor || !editorial || !fechaPublicacion) {
+    Swal.fire('Campos incompletos', 'Por favor completa todos los campos.', 'warning')
+    return
+  }
+
+  if (fechaPublicacion < 1000 || fechaPublicacion > new Date().getFullYear()) {
+    Swal.fire('Año inválido', 'Ingresa un año de publicación válido.', 'error')
+    return
+  }
+
+  // Confirmar antes de guardar
+  const confirmacion = await Swal.fire({
+    title: '¿Guardar cambios?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, guardar',
+    cancelButtonText: 'Cancelar'
+  })
+
+  if (confirmacion.isConfirmed) {
+    try {
+      await updateLibro(id, libroEditado.value)
+      editandoId.value = null
+      obtenerLibros()
+      Swal.fire('Actualizado', 'El libro fue editado exitosamente.', 'success')
+    } catch (error) {
+      console.error('Error al actualizar:', error)
+      Swal.fire('Error', 'Hubo un problema al guardar los cambios.', 'error')
+    }
   }
 }
 

@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import { createLibro } from '@/services/libroService'
+import Swal from 'sweetalert2'
 
 // Emitimos un evento para actualizar la lista de libros en el componente padre
 const emit = defineEmits(['libroCreado'])
@@ -44,6 +45,7 @@ const libro = reactive({
 const handleSubmit = async () => {
   try {
     await createLibro(libro)
+    Swal.fire('Libro creado', 'Libro creado exitosamente.', 'success')
     emit('libroCreado') // Notifica al componente padre que se creó un libro
     // Limpia el formulario
     libro.titulo = ''
