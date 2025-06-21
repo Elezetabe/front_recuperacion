@@ -5,54 +5,76 @@
     <!-- Componente del formulario -->
     <LibroForm @libroCreado="obtenerLibros" />
 
-    <input
-  v-model="filtro"
-  placeholder="Buscar por título o autor"
-  class="filtro"
-/>
+    <!-- Tabla con barra de búsqueda integrada en tarjeta -->
+    <v-card flat>
+      <template #text>
+        <v-text-field
+          v-model="filtro"
+          label="Buscar por título o autor"
+          prepend-inner-icon="mdi-magnify"
+          variant="outlined"
+          hide-details
+          single-line
+        />
+      </template>
 
-    <!-- Tabla de libros -->
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Título</th>
-          <th>Autor</th>
-          <th>Editorial</th>
-          <th>Año</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="libro in librosFiltrados" :key="libro.id">
-          <td>{{ libro.id }}</td>
-          <td v-if="editandoId !== libro.id">{{ libro.titulo }}</td>
-          <td v-else><input v-model="libroEditado.titulo" /></td>
+      <v-data-table
+        :headers="headers"
+        :items="librosFiltrados"
+        item-value="id"
+        class="elevation-1"
+      >
+        <!-- Campo Título -->
+        <template v-slot:[`item.titulo`]="{ item }">
+          <div v-if="editandoId !== item.id">{{ item.titulo }}</div>
+          <v-text-field v-else v-model="libroEditado.titulo" hide-details dense />
+        </template>
 
-          <td v-if="editandoId !== libro.id">{{ libro.autor }}</td>
-          <td v-else><input v-model="libroEditado.autor" /></td>
+        <!-- Campo Autor -->
+        <template v-slot:[`item.autor`]="{ item }">
+          <div v-if="editandoId !== item.id">{{ item.autor }}</div>
+          <v-text-field v-else v-model="libroEditado.autor" hide-details dense />
+        </template>
 
-          <td v-if="editandoId !== libro.id">{{ libro.editorial }}</td>
-          <td v-else><input v-model="libroEditado.editorial" /></td>
+        <!-- Campo Editorial -->
+        <template v-slot:[`item.editorial`]="{ item }">
+          <div v-if="editandoId !== item.id">{{ item.editorial }}</div>
+          <v-text-field v-else v-model="libroEditado.editorial" hide-details dense />
+        </template>
 
-          <td v-if="editandoId !== libro.id">{{ libro.fechaPublicacion }}</td>
-          <td v-else>
-            <input type="number" v-model.number="libroEditado.fechaPublicacion" />
-          </td>
+        <!-- Campo Año -->
+        <template v-slot:[`item.fechaPublicacion`]="{ item }">
+          <div v-if="editandoId !== item.id">{{ item.fechaPublicacion }}</div>
+          <v-text-field
+            v-else
+            type="number"
+            v-model.number="libroEditado.fechaPublicacion"
+            hide-details
+            dense
+          />
+        </template>
 
-          <td>
-            <div v-if="editandoId === libro.id">
-              <button @click="guardarEdicion(libro.id)">Guardar</button>
-              <button @click="cancelarEdicion">Cancelar</button>
-            </div>
-            <div v-else>
-              <button @click="editarLibro(libro)">Editar</button>
-              <button @click="eliminarLibro(libro.id)">Eliminar</button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+        <!-- Acciones -->
+        <template v-slot:[`item.acciones`]="{ item }">
+          <div v-if="editandoId === item.id">
+            <v-btn icon color="success" @click="guardarEdicion(item.id)">
+              <v-icon>mdi-content-save</v-icon>
+            </v-btn>
+            <v-btn icon color="error" @click="cancelarEdicion">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </div>
+          <div v-else>
+            <v-btn icon color="primary" @click="editarLibro(item)">
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+            <v-btn icon color="error" @click="eliminarLibro(item.id)">
+              <v-icon>mdi-delete</v-icon>
+            </v-btn>
+          </div>
+        </template>
+      </v-data-table>
+    </v-card>
   </div>
 </template>
 
@@ -66,17 +88,33 @@ import {
   updateLibro,
 } from '@/services/libroService'
 
+interface Libro {
+  id: number
+  titulo: string
+  autor: string
+  editorial: string
+  fechaPublicacion: number
+}
+
 const filtro = ref('')
-const libros = ref<any[]>([])
+const libros = ref<Libro[]>([])
 const editandoId = ref<number | null>(null)
-const libroEditado = ref<any>({
+const libroEditado = ref<Partial<Libro>>({
   titulo: '',
   autor: '',
   editorial: '',
-  fecha_publicacion: new Date().getFullYear(),
+  fechaPublicacion: new Date().getFullYear(),
 })
 
-// Obtener libros al iniciar
+const headers = [
+  { title: 'Título', key: 'titulo' },
+  { title: 'Autor', key: 'autor' },
+  { title: 'Editorial', key: 'editorial' },
+  { title: 'Año', key: 'fechaPublicacion' },
+  { title: 'Acciones', key: 'acciones', sortable: false },
+]
+
+// Obtener libros
 const obtenerLibros = async () => {
   try {
     libros.value = await getLibros()
@@ -88,7 +126,7 @@ const obtenerLibros = async () => {
 onMounted(obtenerLibros)
 
 // Editar libro
-const editarLibro = (libro: any) => {
+const editarLibro = (libro: Libro) => {
   editandoId.value = libro.id
   libroEditado.value = { ...libro }
 }
@@ -103,7 +141,6 @@ const cancelarEdicion = () => {
 const guardarEdicion = async (id: number) => {
   const { titulo, autor, editorial, fechaPublicacion } = libroEditado.value
 
-  // Validaciones básicas
   if (!titulo || !autor || !editorial || !fechaPublicacion) {
     Swal.fire('Campos incompletos', 'Por favor completa todos los campos.', 'warning')
     return
@@ -114,7 +151,6 @@ const guardarEdicion = async (id: number) => {
     return
   }
 
-  // Confirmar antes de guardar
   const confirmacion = await Swal.fire({
     title: '¿Guardar cambios?',
     icon: 'question',
@@ -129,7 +165,7 @@ const guardarEdicion = async (id: number) => {
         titulo,
         autor,
         editorial,
-        fecha_publicacion: fechaPublicacion // ← aquí se hace el cambio necesario
+        fecha_publicacion: fechaPublicacion
       })
       editandoId.value = null
       obtenerLibros()
@@ -166,13 +202,13 @@ const eliminarLibro = async (id: number) => {
   }
 }
 
-// Filtrar libros
-const librosFiltrados = computed(() => {
-  return libros.value.filter((libro) =>
+// Filtrado
+const librosFiltrados = computed(() =>
+  libros.value.filter((libro) =>
     libro.titulo.toLowerCase().includes(filtro.value.toLowerCase()) ||
     libro.autor.toLowerCase().includes(filtro.value.toLowerCase())
   )
-})
+)
 </script>
 
 <style scoped>
@@ -181,40 +217,13 @@ const librosFiltrados = computed(() => {
   margin: 2rem auto;
   padding: 1rem;
 }
-table {
-  width: 210%;
-  border-collapse: collapse;
+
+.v-card {
   margin-top: 2rem;
-}
-th, td {
-  border: 1px solid #ddd;
-  padding: 0.75rem;
-  text-align: left;
-}
-th {
-  background-color: #f3f3f3;
-}
-input {
-  width: 100%;
-  padding: 5px;
-}
-button {
-  margin-right: 0.5rem;
-  padding: 0.4rem 0.8rem;
-  border: none;
-  background-color: #42b983;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-}
-button:hover {
-  background-color: #369d77;
+  width: 200%;
 }
 
-.filtro {
-  padding: 8px;
-  width: 100%;
-  margin: 1rem 0;
-  font-size: 16px;
+.v-btn {
+  margin: 0 0.2rem;
 }
 </style>
