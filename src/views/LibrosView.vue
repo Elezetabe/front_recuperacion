@@ -177,7 +177,7 @@ const librosFiltrados = computed(() => {
   padding: 1rem;
 }
 table {
-  width: 100%;
+  width: 210%;
   border-collapse: collapse;
   margin-top: 2rem;
 }
